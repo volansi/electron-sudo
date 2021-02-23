@@ -1,5 +1,5 @@
 import {tmpdir} from 'os';
-import {watchFile, unwatchFile, unlinkSync, createReadStream, createWriteStream} from 'fs';
+import {copyFileSync, watchFile, unwatchFile, unlinkSync, createReadStream, createWriteStream} from 'fs';
 import {normalize, join, dirname} from 'path';
 import {createHash} from 'crypto';
 
@@ -358,7 +358,7 @@ class SudoerWin32 extends Sudoer {
 
     constructor(options={}) {
         super(options);
-        this.bundled = 'src\\bin\\elevate.exe';
+        this.bundled = join(__dirname, 'bin', 'elevate.exe');
         this.binary = null;
     }
 
@@ -421,15 +421,9 @@ class SudoerWin32 extends Sudoer {
             // Copy applet to temporary directory
             let target = join(this.tmpdir, 'elevate.exe');
             if (!(await stat(target))) {
-                let copied = createWriteStream(target);
-                createReadStream(self.bundled).pipe(copied);
-                copied.on('close', () => {
-                    self.binary = target;
-                    return resolve(self.binary);
-                });
-                copied.on('error', (err) => {
-                    return reject(err);
-                });
+              copyFileSync(this.bundled, target);
+              self.binary = target;
+              resolve(self.binary);
             } else {
                 self.binary = target;
                 resolve(self.binary);
@@ -462,7 +456,8 @@ class SudoerWin32 extends Sudoer {
         sudoArgs.push('-wait');
         sudoArgs.push(files.batch);
         await this.prepare();
-        cp = spawn(this.binary, sudoArgs, options, {wait: false});
+        var binary = this.binary.replace(/\\/g, '\\\\');
+        cp = spawn(binary, sudoArgs, options, {wait: false});
         cp.files = files;
         await this.watchOutput(cp);
         return cp;
