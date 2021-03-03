@@ -16,6 +16,16 @@ function promisify(fn) {
     };
 }
 
+async function access(target, mode) {
+    let _access = promisify(fs.access);
+    try {
+        await _access(target, mode);
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
 async function exec(cmd, options={}) {
     return new Promise((resolve, reject) => {
         child.exec(cmd, options, (err, stdout, stderr) => {
@@ -63,4 +73,4 @@ let open = promisify(fs.open),
     writeFile = promisify(fs.writeFile);
 
 
-export {readFile, writeFile, spawn, exec, mkdir, stat, open};
+export {readFile, writeFile, spawn, exec, mkdir, stat, open, access};
